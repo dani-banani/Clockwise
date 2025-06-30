@@ -54,6 +54,7 @@ class _MainAppState extends State<MainApp> {
           onSecondary: Color(0xffFFFFFF),
           error: Color(0xffB3261E),
           onError: Color(0xffFFFFFF),
+          primaryFixedDim: Color.fromARGB(255, 185, 185, 185),
         ),
         fontFamily: "Arial",
         // textTheme: const TextTheme(

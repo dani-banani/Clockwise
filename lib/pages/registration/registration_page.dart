@@ -77,7 +77,10 @@ class RegistrationPage extends GetView<RegistrationController> {
                               child: Center(
                                   child: Text(
                                 userRegistrationStateLabel,
-                                style: TextStyle(color: colorScheme.onPrimary),
+                                style: TextStyle(
+                                    color: colorScheme.onPrimary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold),
                               ))),
                         ),
                         Expanded(

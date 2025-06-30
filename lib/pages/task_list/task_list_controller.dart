@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:computing_project/api/category_api.dart';
 import 'package:computing_project/api/task_api.dart';
 import 'package:computing_project/model/category.dart';
+import 'package:computing_project/model/task.dart';
 
 class ColorSelection {
   final Color color;
@@ -156,6 +157,17 @@ class TaskListController extends GetxController {
 
     onRefresh();
     Get.back();
+  }
+
+  Future<bool> deleteTask(Task task) async {
+    final response = await TaskApi.deleteTask(taskId: task.taskId);
+    if (!response.success) {
+      ErrorSnackbarWidget.showSnackbar(title: "Error", messages: response.message);
+      return false;
+    }
+
+    onRefresh();
+    return true;
   }
 
   void toggleAccordian(int index) {

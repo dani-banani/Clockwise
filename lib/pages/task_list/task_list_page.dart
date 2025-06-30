@@ -2,7 +2,7 @@ import 'package:computing_project/model/task.dart';
 import 'package:computing_project/pages/task_list/task_list_controller.dart';
 import 'package:computing_project/widgets/text_field_widget.dart';
 import 'package:get/get.dart';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:computing_project/widgets/button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:computing_project/model/category.dart';
@@ -82,23 +82,43 @@ class TaskListPage extends GetView<TaskListController> {
                           backgroundColor: colorScheme.secondary,
                           headerBuilder: (context, isExpanded) {
                             return ListTile(
-                              title: Text(
-                                taskAccordion.category.categoryName,
-                                style:
-                                    TextStyle(color: colorScheme.onSecondary),
-                              ),
-                              leading: taskAccordion.category
-                                      .isCategoryColored()
-                                  ? Container(
-                                      width: 20,
-                                      height: 20,
+                              title: Row(
+                                children: [
+                                  if (taskAccordion.category
+                                      .isCategoryColored()) ...[
+                                    Container(
+                                      width: 15,
+                                      height: 15,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
                                         color: taskAccordion.category
                                             .getCategoryColor(),
                                       ),
-                                    )
-                                  : null,
+                                    ),
+                                    const SizedBox(width: 20)
+                                  ],
+                                  Expanded(
+                                      child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        taskAccordion.category.categoryName,
+                                        softWrap: true,
+                                        style: TextStyle(
+                                            color: colorScheme.onSecondary,
+                                            fontSize: 16),
+                                      ),
+                                      Text(
+                                        "${taskAccordion.category.tasks.where((task) => task.isCompleted).length} / ${taskAccordion.category.tasks.length}",
+                                        style: TextStyle(
+                                            color: colorScheme.onSecondary,
+                                            fontSize: 12),
+                                      ),
+                                    ],
+                                  )),
+                                ],
+                              ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.start,
@@ -127,8 +147,8 @@ class TaskListPage extends GetView<TaskListController> {
                                       onPressed: () {
                                         Get.toNamed(AppRoutes.addTask,
                                             arguments: {
-                                              "category": taskAccordion
-                                                  .category,
+                                              "category":
+                                                  taskAccordion.category,
                                             });
                                       },
                                       icon: Icon(Icons.add),
@@ -144,8 +164,9 @@ class TaskListPage extends GetView<TaskListController> {
                                     width: 32,
                                     child: IconButton(
                                       onPressed: () {
-                                        showDeleteCategoryDialog(
-                                            context, constraints,
+                                        showDeleteConfirmationDialog(
+                                            context,
+                                            constraints,
                                             taskAccordion.category);
                                       },
                                       icon: Icon(Icons.delete),
@@ -163,24 +184,70 @@ class TaskListPage extends GetView<TaskListController> {
                           },
                           body: Column(
                             children: [
-                              ...taskAccordion.category.tasks
-                                  .map((task) => ListTile(
-                                        onTap: () {
-                                          showTaskDetailModal(
-                                              context,
-                                              constraints,
-                                              colorScheme,
-                                              taskAccordion.category,
-                                              task);
-                                        },
-                                        title: Text(
-                                          task.taskName,
-                                          style: TextStyle(
-                                              color: colorScheme
-                                                  .onPrimaryContainer),
+                              ...taskAccordion.category.tasks.map((task) =>
+                                  Slidable(
+                                    key: Key(task.taskId.toString()),
+                                    startActionPane: ActionPane(
+                                      dragDismissible: true,
+                                      dismissible: DismissiblePane(
+                                        // confirmDismiss: () async {
+                                        //   showDeleteConfirmationDialog(
+                                        //       context, constraints, task);
+
+                                          
+                                        // },
+                                        onDismissed: () {},
+                                        dismissThreshold: 0.1,
+                                      ),
+                                      extentRatio: 0.3,
+                                      motion: const StretchMotion(),
+                                      children: [
+                                        SlidableAction(
+                                          onPressed: (context) {},
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.delete,
+                                          label: "Delete Task",
                                         ),
-                                        tileColor: colorScheme.primaryContainer,
-                                      )),
+                                      ],
+                                    ),
+                                    child: ListTile(
+                                      dense: true,
+                                      onTap: () {
+                                        showTaskDetailModal(
+                                            context,
+                                            constraints,
+                                            colorScheme,
+                                            taskAccordion.category,
+                                            task);
+                                      },
+                                      leading: Checkbox(
+                                        value: task.isCompleted,
+                                        onChanged: (value) {
+                                          task.isCompleted = !task.isCompleted;
+                                          controller.taskAccordions.refresh();
+
+                                          print("check!");
+                                        },
+                                      ),
+                                      title: Text(
+                                        task.taskName,
+                                        style: TextStyle(
+                                          color: colorScheme.onPrimaryContainer,
+                                          decoration: task.isCompleted
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                          decorationColor: Colors.black,
+                                          decorationThickness: 2,
+                                        ),
+                                      ),
+                                      tileColor: task.isCompleted
+                                          ? colorScheme.primaryFixedDim
+                                          : colorScheme.primaryContainer,
+                                    ),
+                                  )),
                             ],
                           ),
                           isExpanded: taskAccordion.isExpanded,
@@ -324,61 +391,91 @@ class TaskListPage extends GetView<TaskListController> {
     );
   }
 
-  void showDeleteCategoryDialog(
-      BuildContext context, BoxConstraints constraints, Category category) {
+  void showDeleteConfirmationDialog(
+      BuildContext context, BoxConstraints constraints, dynamic item) {
+    Type itemType = item.runtimeType;
+    String itemName = itemType == Category ? item.categoryName : item.taskName;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-          contentPadding: EdgeInsets.all(20),
-          actionsPadding:
-              EdgeInsets.only(bottom: 20, right: 20, left: 20, top: 0),
-          clipBehavior: Clip.hardEdge,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                alignment: Alignment.center,
+        contentPadding: EdgeInsets.all(20),
+        actionsPadding:
+            EdgeInsets.only(bottom: 20, right: 20, left: 20, top: 0),
+        clipBehavior: Clip.hardEdge,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  "Delete $itemType",
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        icon: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: colorScheme.onSurface,
+                        )),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text.rich(
+              TextSpan(
                 children: [
-                  Text(
-                    "Delete Category",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface),
+                  TextSpan(
+                    text: "Are you sure you want to delete ",
+                    style:
+                        TextStyle(color: colorScheme.onSurface, fontSize: 14),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                          onPressed: () {
-                            Get.back();
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            size: 20,
-                            color: colorScheme.onSurface,
-                          )),
-                    ],
+                  TextSpan(
+                    text: itemName,
+                    style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontStyle: FontStyle.italic),
+                  ),
+                  TextSpan(
+                    text: "? This action cannot be undone.",
+                    style:
+                        TextStyle(color: colorScheme.onSurface, fontSize: 14),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              Text("Are you sure you want to delete ${category.categoryName}? This action cannot be undone.", textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurface, fontSize: 14),),
-              const SizedBox(height: 20),
-            ],
-          ),
-          actions: [
-            ButtonWidget(
-              colorScheme: colorScheme,
-              onPressed: () {
-                controller.deleteCategory(category);
-              },
-              child: Text(
-                  "Delete Category"),
+              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 20),
           ],
         ),
-      );
+        actions: [
+          ButtonWidget(
+            colorScheme: colorScheme,
+            onPressed: () {
+              if (itemType == Category) {
+                controller.deleteCategory(item);
+              } else {
+                controller.deleteTask(item);
+
+              }
+            },
+            child: Text("Delete $itemType"),
+          ),
+        ],
+      ),
+    );
   }
 
   void showTaskDetailModal(BuildContext context, BoxConstraints constraints,
@@ -427,6 +524,23 @@ class TaskListPage extends GetView<TaskListController> {
                       isTextHidden: false,
                       minLines: 3,
                       maxLines: 7,
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: constraints.maxWidth,
+                      alignment: Alignment.center,
+                      height: 50,
+                      decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(10))),
+                      child: Text(
+                        "SubTasks",
+                        style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16),
+                      ),
                     ),
                   ],
                 ),

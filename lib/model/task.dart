@@ -8,6 +8,7 @@ class Task {
   int daysBeforeReminderStart;
   DateTime dueDate;
   DateTime createdDate;
+  bool isCompleted;
 
   Task({
     required this.taskId,
@@ -19,6 +20,7 @@ class Task {
     required this.daysBeforeReminderStart,
     required this.dueDate,
     required this.createdDate,
+    required this.isCompleted,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class Task {
       daysBeforeReminderStart: json['cw_task_days_before_reminders'],
       dueDate: DateTime.parse(json['cw_task_due_date']),
       createdDate: DateTime.parse(json['cw_task_created_date']),
+      isCompleted: json['cw_task_completion_status'] ?? false,
     );
   }
 }
