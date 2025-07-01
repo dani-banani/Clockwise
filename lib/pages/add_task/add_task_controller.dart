@@ -1,15 +1,11 @@
 import 'package:computing_project/api/task_api.dart';
-import 'package:computing_project/model/task.dart';
 import 'package:computing_project/pages/home_page/home_controller.dart';
 import 'package:computing_project/pages/task_list/task_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:computing_project/api/authentication_api.dart';
 import '../../navigation/app_routes.dart';
-
 import '../../model/category.dart';
 import '../../widgets/error_snackbar_widget.dart';
-
 
 class AddTaskController extends GetxController {
   HomeController homeController = Get.find();
@@ -18,14 +14,13 @@ class AddTaskController extends GetxController {
   Rx<TextEditingController> taskNameController = TextEditingController().obs;
   Rx<TextEditingController> taskDescriptionController =
       TextEditingController().obs;
-  Rx<DateTime> taskDueDate = DateTime.now().obs;
+  Rx<DateTime?> taskDueDate = Rx<DateTime?>(null);
+  Rx<DateTime?> taskDueTime = Rx<DateTime?>(null);
   Rx<int> difficulty = 1.obs;
   Rx<int> priority = 1.obs;
   Rx<int> daysBeforeReminder = 0.obs;
   Rx<int> reminderFrequency = 0.obs;
   Rx<int> categoryId = 0.obs;
-  Rx<bool> isDueDateSelected = false.obs;
-  Rx<String> categoryName = "".obs;
 
   RxList<Category> categories = <Category>[].obs;
 
@@ -51,24 +46,33 @@ class AddTaskController extends GetxController {
     categories.value = response.data!;
   }
 
-  void onCategoryChange(Category selectedCategory) {
-    if (selectedCategory.categoryId == categoryId.value) {
+  void onCategoryChange(int selectedCategoryId) {
+    if (selectedCategoryId == categoryId.value) {
       return;
     }
 
-    categoryId.value = selectedCategory.categoryId;
-    categoryName.value = selectedCategory.categoryName;
+    categoryId.value = selectedCategoryId;
   }
 
   void onAddTask() async {
+    DateTime? dueDate;
     List<String> errorMessages = [];
 
     if (taskNameController.value.text.isEmpty) {
       errorMessages.add("Task name is empty");
     }
 
-    if (!isDueDateSelected.value) {
-      errorMessages.add("Due date is empty");
+    if (taskDueDate.value == null && taskDueTime.value != null) {
+      errorMessages.add("Due date must be selected if time is selected");
+    }
+
+    if (taskDueDate.value != null) {
+      dueDate = DateTime(
+          taskDueDate.value!.year,
+          taskDueDate.value!.month,
+          taskDueDate.value!.day,
+          taskDueTime.value?.hour ?? 0,
+          taskDueTime.value?.minute ?? 0);
     }
 
     if (errorMessages.isNotEmpty) {
@@ -80,12 +84,10 @@ class AddTaskController extends GetxController {
     final response = await TaskApi.createTask(
       name: taskNameController.value.text,
       description: taskDescriptionController.value.text,
-      dueDate: taskDueDate.value,
+      dueDate: dueDate?.toIso8601String(),
       category: categoryId.value,
       difficulty: difficulty.value,
       priority: priority.value,
-      // daysBeforeReminder: daysBeforeReminder.value,
-      // reminderFrequency: reminderFrequency.value,
     );
 
     if (!response.success) {
@@ -95,24 +97,57 @@ class AddTaskController extends GetxController {
     }
 
     taskListController.onRefresh();
-    Get.toNamed(AppRoutes.taskList);
+    Get.offAllNamed(AppRoutes.taskList);
   }
 
-  void onDatePickerTap(BuildContext context) {
-    showDatePicker(
-      context: Get.context!,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(Duration(days: 365 * 100)),
-      initialDatePickerMode: DatePickerMode.day,
-      initialEntryMode: DatePickerEntryMode.calendarOnly,
-      helpText: "Select Due Date",
-    ).then((date) {
-      if (date == null) return;
-      if (date == taskDueDate.value) return;
+  void onDateSelected(DateTime? dateTime) {
+    if (dateTime == taskDueDate.value) return;
 
-      taskDueDate.value = date;
-      isDueDateSelected.value = true;
-    });
+    taskDueDate.value = dateTime;
+  }
+
+  void onTimeSelected(DateTime? time) {
+    if (time == taskDueTime.value) return;
+
+    taskDueTime.value = time;
+  }
+
+  void onDatePickerTap(BuildContext context, ColorScheme colorScheme) {
+    // showDatePicker(
+
+    //   context: Get.context!,
+    //   firstDate: DateTime.now().subtract(Duration(days: 365 * 20)),
+    //   lastDate: DateTime.now().add(Duration(days: 365 * 20)),
+    //   initialDatePickerMode: DatePickerMode.day,
+    //   initialEntryMode: DatePickerEntryMode.calendarOnly,
+    //   helpText: "Select Due Date",
+
+    // ).then((date) {
+    //   if (date == null) return;
+    //   if (date == taskDueDate.value) return;
+
+    //   taskDueDate.value = date;
+    //   isDueDateSelected.value = true;
+    // });
+    // Navigator.of(context).push(
+    // showPicker(
+    //   context: context,
+    //   value: Time(hour: 12, minute: 0),
+    //   iosStylePicker: true,
+    //   pmLabel: "PM",
+    //   amLabel: "AM",
+    //   hourLabel: "Hours",
+    //   minuteLabel: "Minutes",
+
+    //   accentColor: colorScheme.primary,
+    //   backgroundColor: colorScheme.surface,
+    //   focusMinutePicker: false,
+
+    //   onChange: (value) {
+    //     // taskDueDate.value = value;
+    //     isDueDateSelected.value = true;
+    //   },
+    // ),);
   }
 
   //Category (Fetch from category table)

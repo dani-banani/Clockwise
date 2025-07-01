@@ -171,35 +171,45 @@ class AuthenticationApi {
   // Authenticate
   static Future<ApiResponse> authenticateUser() async {
     String jsonResponse = "";
-    final valid = await ensureValidSession();
-    if (!valid) {
+    try {
+      final valid = await ensureValidSession();
+      if (!valid) {
+        jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+          success: false,
+        );
+        return ApiResponse.fromJson(jsonDecode(jsonResponse));
+      }
+
+      final session = Supabase.instance.client.auth.currentSession!;
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
-        success: false,
+        success: true,
+        data: {
+          "userId": session.user.id,
+        },
       );
       return ApiResponse.fromJson(jsonDecode(jsonResponse));
+    } catch (e) {
+      jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+        success: false,
+        message: ["Unexpected error: $e"],
+      );
     }
 
-    final session = Supabase.instance.client.auth.currentSession!;
-    jsonResponse = ApiResponseJson.dataSessionResponseHandler(
-      success: true,
-      data: {
-        "userId": session.user.id,
-      },
-    );
     return ApiResponse.fromJson(jsonDecode(jsonResponse));
   }
-  
+
 // Ensure valid session
   static Future<bool> ensureValidSession() async {
-  final auth = Supabase.instance.client.auth;
-  final session = auth.currentSession;
-  final now = DateTime.now().microsecondsSinceEpoch ~/ 1000;
-  if (session == null || (session.expiresAt != null && session.expiresAt! < now)) {
-    final refreshRes = await auth.refreshSession();
-    if (refreshRes.session == null) {
-      return false;
+    final auth = Supabase.instance.client.auth;
+    final session = auth.currentSession;
+    final now = DateTime.now().microsecondsSinceEpoch ~/ 1000;
+    if (session == null ||
+        (session.expiresAt != null && session.expiresAt! < now)) {
+      final refreshRes = await auth.refreshSession();
+      if (refreshRes.session == null) {
+        return false;
+      }
     }
+    return true;
   }
-  return true;
-}
 }

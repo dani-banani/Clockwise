@@ -35,7 +35,7 @@ class TaskListController extends GetxController {
 
   RxList<AccordionItem> taskAccordions = <AccordionItem>[].obs;
 
-  List<Color> colorOptions = [
+  List<Color> colorOptions = const [
     Color(0xFFA8D8D8), // Darker sky blue (coolest)
     Color(0xFFA8D8B8), // Darker seafoam (cool)
     Color(0xFFB8D8B8), // Darker mint green (cool)
@@ -52,7 +52,15 @@ class TaskListController extends GetxController {
     super.onInit();
   }
 
-  void onRefresh() async {
+  void onRefresh({bool remainExpandedAccordions = false}) async {
+    List<int> expandedCategoryIds = [];
+    if (remainExpandedAccordions) {
+      expandedCategoryIds = taskAccordions
+          .where((item) => item.isExpanded)
+          .map((item) => item.category.categoryId)
+          .toList();
+    }
+
     final response = await TaskApi.getUserTasksWithCategories();
     if (!response.success) {
       ErrorSnackbarWidget.showSnackbar(
@@ -61,7 +69,9 @@ class TaskListController extends GetxController {
     }
 
     taskAccordions.value = response.data!
-        .map((item) => AccordionItem(category: item, isExpanded: false))
+        .map((item) => AccordionItem(
+            category: item,
+            isExpanded: expandedCategoryIds.contains(item.categoryId)))
         .toList();
 
     taskAccordions.refresh();
@@ -84,7 +94,7 @@ class TaskListController extends GetxController {
         color.toARGB32().toRadixString(16).padLeft(9, '0x').toUpperCase();
   }
 
-  void editCategory(Category category) async{
+  void editCategory(Category category) async {
     List<String> errors = [];
 
     if (categoryNameController.value.text.isEmpty) {
@@ -105,11 +115,12 @@ class TaskListController extends GetxController {
     );
 
     if (!response.success) {
-      ErrorSnackbarWidget.showSnackbar(title: "Error", messages: response.message);
+      ErrorSnackbarWidget.showSnackbar(
+          title: "Error", messages: response.message);
       return;
     }
 
-    onRefresh();
+    onRefresh(remainExpandedAccordions: true);
     Get.back();
   }
 
@@ -142,31 +153,32 @@ class TaskListController extends GetxController {
       return;
     }
 
-    onRefresh();
+    onRefresh(remainExpandedAccordions: true);
     Get.back();
   }
 
-  void deleteCategory(Category category) async {
-    print("DELETING CATEGORY: ${category.categoryId}");
-
-    final response = await CategoryApi.deleteCategory(categoryId: category.categoryId);
+  Future<bool> deleteCategory(Category category) async {
+    final response =
+        await CategoryApi.deleteCategory(categoryId: category.categoryId);
     if (!response.success) {
-      ErrorSnackbarWidget.showSnackbar(title: "Error", messages: response.message);
-      return;
+      ErrorSnackbarWidget.showSnackbar(
+          title: "Error", messages: response.message);
+      return false;
     }
 
-    onRefresh();
-    Get.back();
+    onRefresh(remainExpandedAccordions: true);
+    return true;
   }
 
   Future<bool> deleteTask(Task task) async {
     final response = await TaskApi.deleteTask(taskId: task.taskId);
     if (!response.success) {
-      ErrorSnackbarWidget.showSnackbar(title: "Error", messages: response.message);
+      ErrorSnackbarWidget.showSnackbar(
+          title: "Error", messages: response.message);
       return false;
     }
 
-    onRefresh();
+    onRefresh(remainExpandedAccordions: true);
     return true;
   }
 

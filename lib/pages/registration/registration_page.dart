@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:computing_project/widgets/text_field_widget.dart';
-import 'package:computing_project/widgets/date_picker_widget.dart';
+import 'package:computing_project/widgets/datetime_picker_widget.dart';
 import 'package:computing_project/widgets/button_widget.dart';
 
 import './registration_controller.dart';
@@ -223,13 +223,12 @@ class RegistrationPage extends GetView<RegistrationController> {
           dropdownItems: genderDropdownValues,
           onChanged: controller.onSelectGender),
       const SizedBox(height: 20),
-      DatePickerWidget(
-          colorScheme: colorScheme,
-          onDateSelected: (context) {
-            controller.onDatePickerTap(context);
+      DateTimePickerWidget(
+          onDateOrTimeSelected: (date) {
+            controller.onDateSelected(date);
           },
-          isSelected: controller.isBirthdateSelected.value,
-          selectedDate: controller.birthdate.value,
+          maxDate: DateTime.now(),
+          minDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
           helpText: "Select Birthdate"),
       const SizedBox(height: 40),
       ButtonWidget(

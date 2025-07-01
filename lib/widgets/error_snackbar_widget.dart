@@ -3,10 +3,19 @@ import 'package:get/get.dart';
 
 class ErrorSnackbarWidget {
   static void showSnackbar({required String title, required List<String> messages}) {
-    
+    final colorScheme = Get.theme.colorScheme;
       Get.snackbar(
         "",
         "",
+        borderRadius: 20,
+        boxShadows: [
+          BoxShadow(
+            color: colorScheme.primary.withAlpha(100),
+            spreadRadius: 1,
+            blurRadius: 1,
+            offset: const Offset(1, 1),
+          ),
+        ],
         animationDuration: const Duration(milliseconds: 500),
         duration: const Duration(milliseconds: 1500),
         isDismissible: true,
@@ -15,10 +24,10 @@ class ErrorSnackbarWidget {
         titleText: Center(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 118, 0, 0),
+              color: colorScheme.error,
             ),
           ),
         ),
@@ -29,7 +38,6 @@ class ErrorSnackbarWidget {
             style: const TextStyle(color: Colors.black),
           ),
         ),
-        overlayBlur: 0.5,
       );
   }
 }

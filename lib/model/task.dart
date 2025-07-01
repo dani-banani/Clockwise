@@ -6,7 +6,7 @@ class Task {
   int priority;
   int reminderFrequency;
   int daysBeforeReminderStart;
-  DateTime dueDate;
+  DateTime? dueDate;
   DateTime createdDate;
   bool isCompleted;
 
@@ -32,7 +32,7 @@ class Task {
       priority: json['cw_task_priority'],
       reminderFrequency: json['cw_task_reminder_frequency'],
       daysBeforeReminderStart: json['cw_task_days_before_reminders'],
-      dueDate: DateTime.parse(json['cw_task_due_date']),
+      dueDate: json['cw_task_due_date'] != null ? DateTime.parse(json['cw_task_due_date']) : null,
       createdDate: DateTime.parse(json['cw_task_created_date']),
       isCompleted: json['cw_task_completion_status'] ?? false,
     );

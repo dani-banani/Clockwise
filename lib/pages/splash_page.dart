@@ -20,7 +20,7 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> authenticateUser() async {
     final userAuthResponse = await AuthenticationApi.authenticateUser();
-    if (userAuthResponse == null) {
+    if (!userAuthResponse.success) {
       Get.offAllNamed(AppRoutes.registration);
       return;
     }

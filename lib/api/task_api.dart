@@ -3,18 +3,17 @@ import 'dart:convert';
 import 'package:computing_project/api/api_response_json.dart';
 import 'package:computing_project/api/authentication_api.dart';
 import 'package:computing_project/model/category.dart';
-import 'package:computing_project/model/task.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../model/api_response.dart';
 
 class TaskApi {
   static Future<ApiResponse> createTask({
-    required DateTime dueDate,
     required int priority,
     required int difficulty,
     required String description,
     required String name,
+    String? dueDate,
     int? category,
     int daysBeforeReminder = 0,
     int reminderFrequency = 0,
@@ -35,7 +34,7 @@ class TaskApi {
       final response =
           await Supabase.instance.client.from('cw_user_tasks').insert({
         'cw_category_id': category,
-        'cw_task_due_date': dueDate.toIso8601String(),
+        'cw_task_due_date': dueDate,
         'cw_task_days_before_reminders': daysBeforeReminder,
         'cw_task_reminder_frequency': reminderFrequency,
         'cw_task_priority': priority,
@@ -59,7 +58,7 @@ class TaskApi {
         message: ["User profile updated successfully"],
         data: {
           "uid": userId,
-          "dueDate": dueDate.toIso8601String(),
+          "dueDate": dueDate,
           "category": category,
           "priority": priority,
           "difficulty": difficulty,
@@ -88,7 +87,7 @@ class TaskApi {
           success: false,
           statusCode: 401,
         );
-        return ApiResponse.fromJson(jsonDecode(jsonResponse));
+        return ApiResponse.fromJson(jsonDecode(jsonResponse),fromJson: (json) => null);
       }
 
       final userId = userAuthResponse.data['userId'];
@@ -111,17 +110,17 @@ class TaskApi {
         0: [],
       };
 
-      categories.forEach((category) {
+      for (final category in categories) {
         groupedTasks.putIfAbsent(category['cw_category_id'], () => []);
-      });
+      }
 
-      tasks.forEach((task) {
+      for (final task in tasks) {
         if (groupedTasks.containsKey(task['cw_category_id'])) {
           groupedTasks[task['cw_category_id']]?.add(task);
         } else {
           groupedTasks[0]!.add(task);
         }
-      });
+      }
 
       final List<Map<String, dynamic>> categoryList = [];
       for (final category in categories) {
@@ -142,12 +141,13 @@ class TaskApi {
       return ApiResponse.fromJson(jsonDecode(jsonResponse),
           fromJson: (json) => List<Category>.from(
               json['categories'].map((item) => Category.fromJson(item))));
-    } catch (e) {
+    } catch (e,stackTrace) {
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: false,
-        message: ["Unexpected error: $e"],
+        message: ["Unexpected error: $e"]
       );
-      return ApiResponse.fromJson(jsonDecode(jsonResponse));
+      print(stackTrace);
+      return ApiResponse.fromJson(jsonDecode(jsonResponse),fromJson: (json) => null);
     }
   }
 

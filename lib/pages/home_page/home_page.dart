@@ -1,6 +1,5 @@
 import 'package:computing_project/widgets/button_widget.dart';
 import 'package:flutter/material.dart';
-import '../../widgets/footer_navbar_widget.dart';
 import 'package:one_clock/one_clock.dart';
 import 'package:get/get.dart';
 import '../../navigation/app_routes.dart';
@@ -209,8 +208,10 @@ class HomePage extends StatelessWidget {
                     (constraints.maxHeight * 0.2 - 40) / 2),
               ),
               child: AnalogClock(
+                isLive: true,
+                secondHandColor: Colors.red,
                 showDigitalClock: false,
-                showSecondHand: false,
+                showSecondHand: true,
                 tickColor: Colors.black,
                 textScaleFactor: 2,
                 width: constraints.maxHeight * 0.2 - 50,

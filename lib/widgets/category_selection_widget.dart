@@ -1,4 +1,5 @@
 import 'package:computing_project/api/category_api.dart';
+import 'package:computing_project/widgets/action_dialog.widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:computing_project/model/category.dart';
@@ -6,7 +7,7 @@ import 'package:computing_project/model/category.dart';
 class CategorySelectionWidget extends StatefulWidget {
   final String label;
   final int? defaultCategoryId;
-  final Function(Category) onChanged;
+  final Function(int) onChanged;
   const CategorySelectionWidget(
       {super.key,
       required this.label,
@@ -27,15 +28,18 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
   void initState() {
     super.initState();
     CategoryApi.getUserCategories().then((response) {
-      if (response.success) {
-        setState(() {
-          categoryList = response.data;
-          if (widget.defaultCategoryId != null) {
-            selectedCategory = categoryList.firstWhereOrNull(
-                (category) => category.categoryId == widget.defaultCategoryId);
-          }
-        });
+      if (!response.success) {
+        Get.back();
+        return;
       }
+
+      setState(() {
+        categoryList = response.data;
+        if (widget.defaultCategoryId != null) {
+          selectedCategory = categoryList.firstWhereOrNull(
+              (category) => category.categoryId == widget.defaultCategoryId);
+        }
+      });
     });
   }
 
@@ -46,6 +50,9 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
         showPopoverSelection(context);
       },
       child: Container(
+        constraints: const BoxConstraints(
+          minHeight: 50,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: selectedCategory != null
@@ -78,70 +85,79 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
   }
 
   void showPopoverSelection(BuildContext context) {
+    Category? preSelectedCategory;
+    if (selectedCategory != null) {
+      preSelectedCategory = selectedCategory;
+    }
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.all(20),
-        actionsPadding:
-            const EdgeInsets.only(bottom: 20, right: 20, left: 20, top: 0),
-        clipBehavior: Clip.hardEdge,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                    onPressed: () {
-                      Get.back();
-                    },
-                    icon: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: colorScheme.onSurface,
-                    )),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              alignment: Alignment.center,
-              width: double.maxFinite,
-              height: 200,
-              child: ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics()
-                    .applyTo(const BouncingScrollPhysics()),
-                itemCount: categoryList.length,
-                itemBuilder: (context, index) {
-                  final currentItem = categoryList[index];
-                  return GestureDetector(
-                    onTap: () {
-                      widget.onChanged(currentItem);
-                      setState(() {
-                        selectedCategory = currentItem;
+      builder: (context) => StatefulBuilder(builder: (context, setDialogState) {
+        return ActionDialogWidget(
+          onActionPressed: () {
+            setState(() {
+              selectedCategory = preSelectedCategory;
+            });
+
+            if (preSelectedCategory == null) {
+              widget.onChanged(0);
+              return;
+            }
+
+            widget.onChanged(selectedCategory!.categoryId);
+          },
+          title: "Select Category",
+          body: Container(
+            alignment: Alignment.center,
+            width: double.maxFinite,
+            height: 200,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics()
+                  .applyTo(const BouncingScrollPhysics()),
+              itemCount: categoryList.length,
+              itemBuilder: (context, index) {
+                final currentCategory = categoryList[index];
+                return GestureDetector(
+                  onTap: () {
+                    if (preSelectedCategory?.categoryId ==
+                        currentCategory.categoryId) {
+                      setDialogState(() {
+                        preSelectedCategory = null;
                       });
-                      Get.back();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: currentItem.getCategoryColor(
-                            defaultColor: colorScheme.primaryContainer),
-                        borderRadius: BorderRadius.circular(10),
+                      return;
+                    }
+
+                    setDialogState(() {
+                      preSelectedCategory = currentCategory;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: currentCategory.getCategoryColor(
+                          defaultColor: colorScheme.primaryContainer),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: preSelectedCategory?.categoryId ==
+                                currentCategory.categoryId
+                            ? colorScheme.primary
+                            : Colors.transparent,
+                        width: 1,
+                        strokeAlign: BorderSide.strokeAlignCenter,
                       ),
-                      child: Text(currentItem.categoryName),
                     ),
-                  );
-                },
-                separatorBuilder: (context, index) {
-                  return const SizedBox(height: 10);
-                },
-              ),
+                    child: Text(currentCategory.categoryName),
+                  ),
+                );
+              },
+              separatorBuilder: (context, index) {
+                return const SizedBox(height: 10);
+              },
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
+          actionText: "Select Category",
+        );
+      }),
     );
   }
 }

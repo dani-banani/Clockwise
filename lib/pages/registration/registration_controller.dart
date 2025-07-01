@@ -18,7 +18,7 @@ class RegistrationController extends GetxController {
   Rx<TextEditingController> usernameController = TextEditingController().obs;
 
   RxString gender = "".obs;
-  Rx<DateTime> birthdate = DateTime.now().obs;
+  Rx<DateTime?> birthdate = Rx<DateTime?>(null);
 
   RxBool isBirthdateSelected = false.obs;
 
@@ -53,16 +53,16 @@ class RegistrationController extends GetxController {
     }
 
     final response = await AuthenticationApi.signInUser(
-            email: emailController.value.text,
-            password: passwordController.value.text);
+        email: emailController.value.text,
+        password: passwordController.value.text);
 
     if (!response.success) {
-        ErrorSnackbarWidget.showSnackbar(
-          title: "Login Failed",
-          messages: response.message,
-        );
-        return;
-      }
+      ErrorSnackbarWidget.showSnackbar(
+        title: "Login Failed",
+        messages: response.message,
+      );
+      return;
+    }
 
     Get.offAllNamed(AppRoutes.home);
   }
@@ -112,7 +112,11 @@ class RegistrationController extends GetxController {
       errorMessages.add("Gender field is empty");
     }
 
-    if (!isBirthdateSelected.value) {
+    if (birthdate.value != null) {
+      if (birthdate.value!.isAfter(DateTime.now())) {
+        errorMessages.add("Birhtdate selected is invalid");
+      }
+    } else {
       errorMessages.add("Birthdate field is empty");
     }
 
@@ -125,11 +129,12 @@ class RegistrationController extends GetxController {
     final response = await AuthenticationApi.updateUserProfile(
       username: usernameController.value.text,
       gender: gender.value,
-      birthdate: birthdate.value,
+      birthdate: birthdate.value!,
     );
 
     if (!response.success) {
-      ErrorSnackbarWidget.showSnackbar(title: "Sign Up Failed", messages: response.message);
+      ErrorSnackbarWidget.showSnackbar(
+          title: "Sign Up Failed", messages: response.message);
       return;
     }
 
@@ -171,20 +176,9 @@ class RegistrationController extends GetxController {
   //       overlayBlur: 0.5);
   // }
 
-  void onDatePickerTap(BuildContext context) {
-    showDatePicker(
-      context: Get.context!,
-      firstDate: DateTime.now().subtract(Duration(days: 365 * 100)),
-      lastDate: DateTime.now(),
-      initialDatePickerMode: DatePickerMode.day,
-      initialEntryMode: DatePickerEntryMode.calendarOnly,
-      helpText: "Select Birthdate",
-    ).then((date) {
-      if (date == null) return;
-      if (date == birthdate.value) return;
+  void onDateSelected(DateTime? date) {
+    if (date == birthdate.value) return;
 
-      birthdate.value = date;
-      isBirthdateSelected.value = true;
-    });
+    birthdate.value = date;
   }
 }

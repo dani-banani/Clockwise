@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
 
 import 'navigation/app_routes.dart';
-import 'widgets/footer_navbar_widget.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -54,7 +53,7 @@ class _MainAppState extends State<MainApp> {
           onSecondary: Color(0xffFFFFFF),
           error: Color(0xffB3261E),
           onError: Color(0xffFFFFFF),
-          primaryFixedDim: Color.fromARGB(255, 185, 185, 185),
+          primaryFixedDim: Color(0xffE1E1E1),
         ),
         fontFamily: "Arial",
         // textTheme: const TextTheme(
@@ -79,20 +78,7 @@ class _MainAppState extends State<MainApp> {
       ],
       builder: (context, child) {
         return Scaffold(
-          body: Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              (noFooterRoutes.contains(currentRoute))
-                  ? const SizedBox.shrink()
-                  : Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: FooterNavbarWidget(
-                        currentPage: currentRoute,
-                      ))
-            ],
-          ),
+          body: child ?? const SizedBox.shrink(),
         );
       },
     );
