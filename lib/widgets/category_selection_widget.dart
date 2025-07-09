@@ -1,53 +1,29 @@
-import 'package:computing_project/api/category_api.dart';
+import 'package:computing_project/pages/task_list/task_list_controller.dart';
 import 'package:computing_project/widgets/action_dialog.widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:computing_project/model/category.dart';
 
-class CategorySelectionWidget extends StatefulWidget {
+class CategorySelectionWidget extends StatelessWidget {
   final String label;
-  final int? defaultCategoryId;
-  final Function(int) onChanged;
+  final Category? selectedCategory;
+  final Function(Category?) onChanged;
   const CategorySelectionWidget(
       {super.key,
       required this.label,
-      this.defaultCategoryId,
+      this.selectedCategory,
       required this.onChanged});
 
   @override
-  State<CategorySelectionWidget> createState() =>
-      _CategorySelectionWidgetState();
-}
-
-class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
-  final ColorScheme colorScheme = Get.theme.colorScheme;
-  List<Category> categoryList = [];
-  Category? selectedCategory;
-
-  @override
-  void initState() {
-    super.initState();
-    CategoryApi.getUserCategories().then((response) {
-      if (!response.success) {
-        Get.back();
-        return;
-      }
-
-      setState(() {
-        categoryList = response.data;
-        if (widget.defaultCategoryId != null) {
-          selectedCategory = categoryList.firstWhereOrNull(
-              (category) => category.categoryId == widget.defaultCategoryId);
-        }
-      });
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final colorScheme = Get.theme.colorScheme;
+    TaskListController taskListController = Get.find();
+    final categoryList =
+        taskListController.taskAccordions.map((item) => item.category).toList();
+
     return GestureDetector(
       onTap: () {
-        showPopoverSelection(context);
+        showPopoverSelection(context, colorScheme, categoryList);
       },
       child: Container(
         constraints: const BoxConstraints(
@@ -66,7 +42,7 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
           children: [
             Flexible(
               child: Text(
-                selectedCategory?.categoryName ?? widget.label,
+                selectedCategory?.categoryName ?? label,
                 softWrap: true,
                 style: TextStyle(
                     fontSize: 16,
@@ -84,7 +60,8 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
     );
   }
 
-  void showPopoverSelection(BuildContext context) {
+  void showPopoverSelection(BuildContext context, ColorScheme colorScheme,
+      List<Category> categoryList) {
     Category? preSelectedCategory;
     if (selectedCategory != null) {
       preSelectedCategory = selectedCategory;
@@ -94,16 +71,14 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
       builder: (context) => StatefulBuilder(builder: (context, setDialogState) {
         return ActionDialogWidget(
           onActionPressed: () {
-            setState(() {
-              selectedCategory = preSelectedCategory;
-            });
-
             if (preSelectedCategory == null) {
-              widget.onChanged(0);
+              onChanged(null);
+              Get.back();
               return;
             }
 
-            widget.onChanged(selectedCategory!.categoryId);
+            onChanged(preSelectedCategory);
+            Get.back();
           },
           title: "Select Category",
           body: Container(
@@ -143,7 +118,7 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
                             ? colorScheme.primary
                             : Colors.transparent,
                         width: 1,
-                        strokeAlign: BorderSide.strokeAlignCenter,
+                        strokeAlign: BorderSide.strokeAlignInside,
                       ),
                     ),
                     child: Text(currentCategory.categoryName),

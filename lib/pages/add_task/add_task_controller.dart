@@ -1,6 +1,7 @@
 import 'package:computing_project/api/task_api.dart';
 import 'package:computing_project/pages/home_page/home_controller.dart';
 import 'package:computing_project/pages/task_list/task_list_controller.dart';
+import 'package:computing_project/utils/api_response_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../navigation/app_routes.dart';
@@ -17,9 +18,20 @@ class AddTaskController extends GetxController {
   Rx<DateTime?> taskDueDate = Rx<DateTime?>(null);
   Rx<DateTime?> taskDueTime = Rx<DateTime?>(null);
   Rx<int> difficulty = 1.obs;
-  Rx<int> priority = 1.obs;
-  Rx<int> daysBeforeReminder = 0.obs;
-  Rx<int> reminderFrequency = 0.obs;
+  Map<int, String> difficultyValues = {
+    1: "Very Easy",
+    2: "Easy",
+    3: "Moderate",
+    4: "Difficult",
+    5: "Very Difficult",
+  };
+  Rx<int> priority = 2.obs;
+  Map<int, String> priorityValues = {
+    1: "Low Priority",
+    2: "Normal Priority",
+    3: "High Priority",
+  };
+  Rx<int> reminderFrequency = 1.obs;
   Rx<int> categoryId = 0.obs;
 
   RxList<Category> categories = <Category>[].obs;
@@ -55,24 +67,10 @@ class AddTaskController extends GetxController {
   }
 
   void onAddTask() async {
-    DateTime? dueDate;
     List<String> errorMessages = [];
 
     if (taskNameController.value.text.isEmpty) {
       errorMessages.add("Task name is empty");
-    }
-
-    if (taskDueDate.value == null && taskDueTime.value != null) {
-      errorMessages.add("Due date must be selected if time is selected");
-    }
-
-    if (taskDueDate.value != null) {
-      dueDate = DateTime(
-          taskDueDate.value!.year,
-          taskDueDate.value!.month,
-          taskDueDate.value!.day,
-          taskDueTime.value?.hour ?? 0,
-          taskDueTime.value?.minute ?? 0);
     }
 
     if (errorMessages.isNotEmpty) {
@@ -84,19 +82,17 @@ class AddTaskController extends GetxController {
     final response = await TaskApi.createTask(
       name: taskNameController.value.text,
       description: taskDescriptionController.value.text,
-      dueDate: dueDate?.toIso8601String(),
-      category: categoryId.value,
+      dueDate: taskDueDate.value?.toIso8601String(),
+      reminderStartDate: taskDueDate.value?.toIso8601String(),
+      reminderFrequency: reminderFrequency.value,
+      category: categoryId.value == 0 ? null : categoryId.value,
       difficulty: difficulty.value,
       priority: priority.value,
     );
 
-    if (!response.success) {
-      ErrorSnackbarWidget.showSnackbar(
-          title: "Failed to Add Task", messages: response.message);
-      return;
-    }
+    if (!ApiResponseHandler.handleProtectedApiResponse(response)) return;
 
-    taskListController.onRefresh();
+    taskListController.onReload();
     Get.offAllNamed(AppRoutes.taskList);
   }
 
@@ -111,47 +107,4 @@ class AddTaskController extends GetxController {
 
     taskDueTime.value = time;
   }
-
-  void onDatePickerTap(BuildContext context, ColorScheme colorScheme) {
-    // showDatePicker(
-
-    //   context: Get.context!,
-    //   firstDate: DateTime.now().subtract(Duration(days: 365 * 20)),
-    //   lastDate: DateTime.now().add(Duration(days: 365 * 20)),
-    //   initialDatePickerMode: DatePickerMode.day,
-    //   initialEntryMode: DatePickerEntryMode.calendarOnly,
-    //   helpText: "Select Due Date",
-
-    // ).then((date) {
-    //   if (date == null) return;
-    //   if (date == taskDueDate.value) return;
-
-    //   taskDueDate.value = date;
-    //   isDueDateSelected.value = true;
-    // });
-    // Navigator.of(context).push(
-    // showPicker(
-    //   context: context,
-    //   value: Time(hour: 12, minute: 0),
-    //   iosStylePicker: true,
-    //   pmLabel: "PM",
-    //   amLabel: "AM",
-    //   hourLabel: "Hours",
-    //   minuteLabel: "Minutes",
-
-    //   accentColor: colorScheme.primary,
-    //   backgroundColor: colorScheme.surface,
-    //   focusMinutePicker: false,
-
-    //   onChange: (value) {
-    //     // taskDueDate.value = value;
-    //     isDueDateSelected.value = true;
-    //   },
-    // ),);
-  }
-
-  //Category (Fetch from category table)
-
-  //Dropdown days before reminder (Choose a date)
-  //Reminder frequency (Daily, Weekly, Biweekly and Custom)
 }

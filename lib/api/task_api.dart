@@ -15,7 +15,7 @@ class TaskApi {
     required String name,
     String? dueDate,
     int? category,
-    int daysBeforeReminder = 0,
+    String? reminderStartDate,
     int reminderFrequency = 0,
   }) async {
     String jsonResponse = "";
@@ -35,7 +35,7 @@ class TaskApi {
           await Supabase.instance.client.from('cw_user_tasks').insert({
         'cw_category_id': category,
         'cw_task_due_date': dueDate,
-        'cw_task_days_before_reminders': daysBeforeReminder,
+        'cw_task_reminder_start_date': reminderStartDate,
         'cw_task_reminder_frequency': reminderFrequency,
         'cw_task_priority': priority,
         'cw_task_difficulty': difficulty,
@@ -65,7 +65,7 @@ class TaskApi {
           "difficulty": difficulty,
           "description": description,
           "name": name,
-          "daysBeforeReminder": daysBeforeReminder,
+          "reminderStartDate": reminderStartDate,
           "reminderFrequency": reminderFrequency
         },
       );
@@ -100,23 +100,23 @@ class TaskApi {
       final tasks = await Supabase.instance.client
           .from('cw_user_tasks')
           .select()
-          .eq('cw_user_id', userId);
+          .eq('cw_user_id', userId); 
 
       final taskIds = tasks.map((t) => t['cw_task_id'] as int).toList();
 
       List subtasks = [];
       if (taskIds.isNotEmpty) {
         subtasks = await Supabase.instance.client
-            .from('cw_subtasks')
+            .from('cw_user_subtasks')
             .select()
             .inFilter('cw_task_id', taskIds);
       }
 
       final Map<int, List<dynamic>> subtasksByTask = {};
       for (final subtask in subtasks) {
-        final tid = subtask['cw_task_id'];
-        if (tid != null) {
-          subtasksByTask.putIfAbsent(tid, () => []).add(subtask);
+        final taskId = subtask['cw_task_id'];
+        if (taskId != null) {
+          subtasksByTask.putIfAbsent(taskId, () => []).add(subtask);
         }
       }
 
@@ -143,6 +143,12 @@ class TaskApi {
       }
 
       final List<Map<String, dynamic>> categoryList = [];
+      categoryList.add({
+        'cw_category_id': 0,
+        'cw_category_name': 'Uncategorized',
+        'cw_category_color': '',
+        'tasks': groupedTasks[0] ?? [],
+      });
       for (final category in categories) {
         final categoryId = category['cw_category_id'];
         categoryList.add({
@@ -162,11 +168,11 @@ class TaskApi {
           fromJson: (json) => List<Category>.from(
               json['categories'].map((item) => Category.fromJson(item))));
     } catch (e,stackTrace) {
+      print("stackTrace: $stackTrace");
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: false,
         message: ["Unexpected error: $e"]
       );
-      print(stackTrace);
       return ApiResponse.fromJson(jsonDecode(jsonResponse),fromJson: (json) => null);
     }
   }

@@ -1,65 +1,66 @@
 import 'package:flutter/material.dart';
 
-class SliderWidget extends StatefulWidget {
+class SliderWidget extends StatelessWidget {
   final ColorScheme colorScheme;
-  final int value;
+  final Map<int, String> values;
+  final int selectedKey;
   final Function(int) onChanged;
-  final int min;
-  final int max;
-  final int divisions;
   final String label;
   const SliderWidget({
     super.key,
     required this.colorScheme,
-    required this.value,
+    required this.values,
+    required this.selectedKey,
     required this.onChanged,
-    required this.min,
-    required this.max,
-    required this.divisions,
     required this.label,
   });
 
   @override
-  State<SliderWidget> createState() => _SliderWidgetState();
-}
-
-class _SliderWidgetState extends State<SliderWidget> {
-  @override
   Widget build(BuildContext context) {
+    List<int> sliderValues = values.keys.toList();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: widget.colorScheme.primaryContainer,
+        color: colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          Container(alignment: Alignment.centerLeft, child: Text(widget.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),)),
-          const SizedBox(height: 20),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Slider(
-                    padding: EdgeInsets.zero,
-                    min: widget.min.toDouble(),
-                    max: widget.max.toDouble(),
-                    divisions: widget.divisions,
-                    activeColor: widget.colorScheme.primary,
-                    value: widget.value.toDouble(),
-                    label: widget.value.toString(),
-                    onChanged: (value) {
-                      widget.onChanged(value.toInt());
-                    }),
-              ),
-              const SizedBox(width: 30),  
               Container(
+                  alignment: Alignment.centerLeft,
                   child: Text(
-                    widget.value.toString(),
-                    style: TextStyle(
-                        color: widget.colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold),
+                    "$label:",
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
                   )),
+              Text(
+                values[selectedKey] ?? "",
+                style: TextStyle(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold),
+              ),
             ],
           ),
+          const SizedBox(height: 20),
+          Slider(
+              padding: EdgeInsets.zero,
+              allowedInteraction: SliderInteraction.tapAndSlide,
+              min: 0,
+              max: sliderValues.length.toDouble() - 1,
+              divisions: sliderValues.length - 1,
+              activeColor: colorScheme.primary,
+              value: sliderValues.indexOf(selectedKey).toDouble() == -1
+                  ? 0
+                  : sliderValues.indexOf(selectedKey).toDouble(),
+              label: values[selectedKey] ?? "",
+              onChanged: (value) {
+                int selectedValue = values.keys.toList()[value.toInt()];
+                onChanged(selectedValue);
+              }),
         ],
       ),
     );

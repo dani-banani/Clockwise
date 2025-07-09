@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 
 import 'navigation/app_routes.dart';
 
@@ -37,7 +36,7 @@ class _MainAppState extends State<MainApp> {
 
   @override
   Widget build(BuildContext context) {
-    String currentRoute = Get.currentRoute;
+    String currentRoute;
 
     return GetMaterialApp(
       theme: ThemeData(
@@ -47,12 +46,14 @@ class _MainAppState extends State<MainApp> {
           onPrimary: Color(0xffFFFFFF),
           surface: Color(0xffE8E8E8),
           onSurface: Color(0xff2C2C2C),
-          primaryContainer: Color(0xffF5F5F5),
-          onPrimaryContainer: Color(0xff3D2914),
           secondary: Color(0xff8B7355),
           onSecondary: Color(0xffFFFFFF),
+          tertiary: Color(0xffD4B483),
+          onTertiary: Color(0xffFFFFFF),
           error: Color(0xffB3261E),
           onError: Color(0xffFFFFFF),
+          primaryContainer: Color(0xffF5F5F5),
+          onPrimaryContainer: Color(0xff3D2914),
           primaryFixedDim: Color(0xffE1E1E1),
         ),
         fontFamily: "Arial",

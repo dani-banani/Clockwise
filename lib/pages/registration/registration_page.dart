@@ -223,13 +223,13 @@ class RegistrationPage extends GetView<RegistrationController> {
           dropdownItems: genderDropdownValues,
           onChanged: controller.onSelectGender),
       const SizedBox(height: 20),
-      DateTimePickerWidget(
-          onDateOrTimeSelected: (date) {
-            controller.onDateSelected(date);
-          },
-          maxDate: DateTime.now(),
-          minDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-          helpText: "Select Birthdate"),
+      // DateTimePickerWidget(
+      //     onDateOrTimeSelected: (date) {
+      //       controller.onDateSelected(date);
+      //     },
+      //     maxDate: DateTime.now(),
+      //     minDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
+      //     helpText: "Select Birthdate"),
       const SizedBox(height: 40),
       ButtonWidget(
           colorScheme: colorScheme,

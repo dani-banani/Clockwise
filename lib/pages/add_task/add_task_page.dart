@@ -56,17 +56,15 @@ class AddTaskPage extends GetView<AddTaskController> {
                     CategorySelectionWidget(
                         label: "Select Task Category",
                         onChanged: (value) {
-                          controller.onCategoryChange(value);
+                          controller.onCategoryChange(value?.categoryId ?? 0);
                         },
-                        defaultCategoryId: defaultCategory?.categoryId),
+                        selectedCategory: controller.categories.firstWhereOrNull((element) => element.categoryId == controller.categoryId.value)),
                     const SizedBox(height: 20),
                     SliderWidget(
                         label: "Difficulty",
                         colorScheme: colorScheme,
-                        value: controller.difficulty.value,
-                        min: 1,
-                        max: 5,
-                        divisions: 4,
+                        values: controller.difficultyValues,
+                        selectedKey: controller.difficulty.value,
                         onChanged: (value) {
                           controller.difficulty.value = value;
                         }),
@@ -74,33 +72,25 @@ class AddTaskPage extends GetView<AddTaskController> {
                     SliderWidget(
                         label: "Priority",
                         colorScheme: colorScheme,
-                        value: controller.priority.value,
-                        min: 1,
-                        max: 3,
-                        divisions: 2,
+                        values: controller.priorityValues,
+                        selectedKey: controller.priority.value,
                         onChanged: (value) {
                           controller.priority.value = value;
                         }),
                     const SizedBox(height: 20),
                     DateTimePickerWidget(
-                        onDateOrTimeSelected: (date) {
+                        onDateTimeSelected: (date) {
                           controller.onDateSelected(date);
                         },
+                        selectedDate: controller.taskDueDate.value,
                         helpText: "Select Task Due Date"),
-                    const SizedBox(height: 20),
-                    DateTimePickerWidget(
-                        isTime: true,
-                        onDateOrTimeSelected: (time) {
-                          controller.onTimeSelected(time);
-                        },
-                        helpText: "Select Task Due Time"),
                     const SizedBox(height: 40),
                     ButtonWidget(
                         colorScheme: colorScheme,
-                        child: const Text("Submit"),
                         onPressed: controller.onAddTask,
                         width: Get.width * 0.4,
-                        height: 50)
+                        height: 50,
+                        child: const Text("Submit")),
                   ],
                 ),
               ),

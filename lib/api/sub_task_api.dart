@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:computing_project/api/api_response_json.dart';
 import 'package:computing_project/api/authentication_api.dart';
+import 'package:computing_project/model/subtask.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../model/api_response.dart';
 
 class SubTaskApi {
-  static Future<ApiResponse> createSubTask({
+  static Future<ApiResponse<Subtask?>> createSubTask({
     required int taskId,
     required String subTaskName,
   }) async {
@@ -19,42 +20,41 @@ class SubTaskApi {
           success: false,
           statusCode: 401,
         );
-        return ApiResponse.fromJson(jsonDecode(jsonResponse));
+        return ApiResponse.fromJson(jsonDecode(jsonResponse),
+            fromJson: (json) => null);
       }
 
-      final response = await Supabase.instance.client
-          .from('cw_subtasks')
-          .insert({
-            'cw_task_id': taskId,
-            'cw_task_name': subTaskName,
-            'cw_task_completion_status': false,
-          })
-          .select();
+      final response =
+          await Supabase.instance.client.from('cw_user_subtasks').insert({
+        'cw_task_id': taskId,
+        'cw_subtask_name': subTaskName,
+        'cw_subtask_completion_status': false,
+      }).select();
 
       if (response.isEmpty) {
         jsonResponse = ApiResponseJson.dataSessionResponseHandler(
           success: false,
-          message: ["Create subtask failed"],
+          message: ["Something went wrong"],
         );
-        return ApiResponse.fromJson(jsonDecode(jsonResponse));
+        return ApiResponse.fromJson(jsonDecode(jsonResponse),
+            fromJson: (json) => null);
       }
 
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
-        success: true,
-        message: ["Subtask created successfully"],
-        data: {
-          "taskId": taskId,
-          "subTaskName": subTaskName,
-        },
-      );
+          success: true, data: response[0]);
+
+      return ApiResponse.fromJson(jsonDecode(jsonResponse),
+          fromJson: (json) => Subtask.fromJson(json));
     } catch (e) {
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: false,
         message: ["Unexpected error: $e"],
       );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse),
+          fromJson: (json) => null);
     }
-    return ApiResponse.fromJson(jsonDecode(jsonResponse));
   }
+
   static Future<ApiResponse> editSubTask({
     required int subTaskId,
     required Map<String, dynamic> fieldsToUpdate,
@@ -78,35 +78,23 @@ class SubTaskApi {
         return ApiResponse.fromJson(jsonDecode(jsonResponse));
       }
 
-      final response = await Supabase.instance.client
-          .from('cw_subtasks')
+      await Supabase.instance.client
+          .from('cw_user_subtasks')
           .update(fieldsToUpdate)
-          .eq('cw_subtask_id', subTaskId)
-          .select();
-
-      if (response.isEmpty) {
-        jsonResponse = ApiResponseJson.dataSessionResponseHandler(
-          success: false,
-          message: ["Edit subtask failed"],
-        );
-        return ApiResponse.fromJson(jsonDecode(jsonResponse));
-      }
+          .eq('cw_subtask_id', subTaskId);
 
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: true,
-        message: ["Subtask updated successfully"],
-        data: {
-          "subTaskId": subTaskId,
-          ...fieldsToUpdate,
-        },
       );
+
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
     } catch (e) {
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: false,
         message: ["Unexpected error: $e"],
       );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
     }
-    return ApiResponse.fromJson(jsonDecode(jsonResponse));
   }
 
   static Future<ApiResponse> deleteSubTask({
@@ -124,23 +112,20 @@ class SubTaskApi {
       }
 
       await Supabase.instance.client
-          .from('cw_subtasks')
+          .from('cw_user_subtasks')
           .delete()
           .eq('cw_subtask_id', subTaskId);
 
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: true,
-        message: ["Subtask deleted successfully"],
-        data: {
-          "subTaskId": subTaskId,
-        },
       );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
     } catch (e) {
       jsonResponse = ApiResponseJson.dataSessionResponseHandler(
         success: false,
         message: ["Unexpected error: $e"],
       );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
     }
-    return ApiResponse.fromJson(jsonDecode(jsonResponse));
   }
 }
