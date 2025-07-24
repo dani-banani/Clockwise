@@ -55,4 +55,41 @@ class UserApi {
     }
     return ApiResponse.fromJson(jsonDecode(jsonResponse));
   }
+  static Future<ApiResponse> getUserProfile() async {
+  String jsonResponse = "";
+  try {
+    final userAuthResponse = await AuthenticationApi.authenticateUser();
+    if (!userAuthResponse.success) {
+      jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+        success: false,
+        statusCode: 401,
+      );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
+    }
+
+    final userId = userAuthResponse.data['userId'];
+
+    final response = await Supabase.instance.client
+        .from('cw_user_profile')
+        .select()
+        .eq('cw_user_id', userId);
+
+    if (response.isEmpty) {
+      jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+        success: false,
+      );
+      return ApiResponse.fromJson(jsonDecode(jsonResponse));
+    }
+
+    jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+      success: true,
+      data: response.first,
+    );
+  } catch (e) {
+    jsonResponse = ApiResponseJson.dataSessionResponseHandler(
+      success: false,
+    );
+  }
+  return ApiResponse.fromJson(jsonDecode(jsonResponse));
+  }
 }
